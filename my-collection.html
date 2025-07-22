@@ -116,7 +116,7 @@
         border: none;
         text-align: center;
         color: blue;
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: bold;
         outline: none;
       }
@@ -176,8 +176,13 @@
       }
 
       .item-box {
-        height: 3rem;
-        width: 3rem;
+        height: 4rem;
+        aspect-ratio: 1 / 1;
+      }
+
+      .item-box-big {
+        height: 5rem;
+        aspect-ratio: 1 / 1;
       }
 
       .item {
@@ -186,8 +191,8 @@
       }
 
       .summary-container {
-        height: 20rem;
-        width: 30rem;
+        height: 25rem;
+        width: 35rem;
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -228,6 +233,8 @@
         align-items: center;
         justify-content: center;
         font-size: 1.5rem;
+        white-space: nowrap;
+        overflow: visible;
       }
     </style>
   </head>
@@ -273,6 +280,8 @@
         const doneBtn = document.getElementById("doneBtn");
         let collectionType = "";
         let report = {};
+        let itemPanelHeight = 0;
+        let maxNumOfStars = 0;
 
         // The starting page
         function createTeams(teamCount) {
@@ -298,7 +307,7 @@
 
             const scoreBox = document.createElement("div");
             scoreBox.className = "score-box";
-            scoreBox.textContent = 0;
+            scoreBox.textContent = "0";
 
             const itemPanel = document.createElement("div");
             itemPanel.className = "item-panel";
@@ -309,6 +318,9 @@
             scorePanel.append(plusBtn, scoreBox, minusBtn);
             team.append(teamName, scorePanel, itemPanel);
             gameContainer.appendChild(team);
+
+            itemPanelHeight = itemPanel.clientHeight;
+            maxNumOfStars = calculateMaxItems(itemPanel);
           }
         }
         
@@ -331,11 +343,11 @@
           const minusSound = new Audio("./sounds/incorrect.mp3");
 
           if (scoreBox) {
-            let score = Number(scoreBox.textContent);
+            let score = parseInt(scoreBox.textContent, 10) || 0;
 
             if (isPlusBtn) {
               plusSound.play();
-              score += 1;
+              if (score < maxNumOfStars * 2) score += 1;
             } else {
               minusSound.play();
               score -= 1;
@@ -349,7 +361,7 @@
 
         function calculateMaxItems(itemPanel) {
           const tempBox = document.createElement("div");
-          tempBox.className = "item-box";
+          tempBox.className = Number(numOfTeams.value) < 3 ? "item-box-big" : "item-box";
           tempBox.style.visibility = "hidden";
           itemPanel.appendChild(tempBox);
 
@@ -371,12 +383,17 @@
             goodItem = "./images/blue-star.png";
             badItem = "./images/black-star.png";
             bestItem = "./images/smiling-star.png";
-          };
+          } else if (type === "coin") {
+            goodItem = "./images/silver-coin.png";
+            badItem = "./images/stone.png";
+            bestItem = "./images/gold-coin.png";
+          }
 
           if (scoreNum > 0 && scoreNum <= maxItems) {
             for (let i = 1; i <= scoreNum; i++) {
               const itemBox = document.createElement("div");
-              itemBox.className = "item-box";
+              itemBox.className = Number(numOfTeams.value) < 3 ? "item-box-big" : "item-box";
+
               const item = document.createElement("img");
               item.className = "item";
               item.src = goodItem;
@@ -395,7 +412,7 @@
               }
           }
 
-          if (scoreNum > maxItems) {
+          if (scoreNum > maxItems && scoreNum <= maxItems * 2) {
             const numOfBestItem = scoreNum - maxItems;
             for (let i = 1; i <= numOfBestItem; i++) {
               const itemBox = document.createElement("div");
@@ -406,6 +423,8 @@
               itemBox.appendChild(item);
               itemPanel.appendChild(itemBox);
             }
+          } else {
+            return;
           }
         }
 
@@ -434,31 +453,50 @@
           gameContainer.classList.add("hidden");
           summaryContainer.classList.remove("hidden");
 
+          const starHeads = [
+            "./images/first-star.png",
+            "./images/second-star.png",
+            "./images/third-star.png",
+            "./images/fourth-star.png"
+          ];
           const colors = ["green", "blue", "yellow", "red"];
           let i = 0;
+          let sortedScore = [];              
+          let scores = [];
+
+          for (let ts in report) {
+            scores.push(report[ts].teamScore);
+          }
+          sortedScore = scores.sort((a, b) => b - a);
 
           for (let team in report) {
             const teamBlockContainer = document.createElement("div");
             teamBlockContainer.className = "team-summary-container";
 
-            // const teamBlockHead = document.createElement('div');
-            // teamBlockHead.className = "team-summary-head";
+            const teamBlockHead = document.createElement('div');
+            teamBlockHead.className = "team-summary-head";
 
-            // const teamBlockHeadImg = document.createElement('img');
-            // teamBlockHeadImg.className = "team-summary-head-img";
-            // teamBlockHeadImg.src = "./images/gold-coin.png"; 
+            const teamBlockHeadImg = document.createElement('img');
+            teamBlockHeadImg.className = "team-summary-head-img";
+            for (let i=0; i < sortedScore.length; i++) {
+              if (report[team].teamScore === sortedScore[i]) {
+                teamBlockHeadImg.src = starHeads[i];
+              }
+            }
 
             const teamBlock = document.createElement("div");
             teamBlock.className = "team-summary";
-            teamBlock.style.height = report[team].teamScore / 2 + "%";
+            const heightPerScore = (summaryContainer.clientHeight - teamBlockHead.clientHeight) / (maxNumOfStars * 2);
+            const blockheight = report[team].teamScore * heightPerScore;
+            teamBlock.style.height = Math.max(blockheight, 0) + "px";
             teamBlock.style.backgroundColor = colors[i];
             teamBlock.textContent = report[team].teamName;
             teamBlock.style.boxShadow = `2px 2px 10px white`;
             teamBlock.style.borderRadius = "0 0 0.3rem 0.3rem";
             i++
 
-            // teamBlockHead.appendChild(teamBlockHeadImg);
-            teamBlockContainer.append(teamBlock);
+            teamBlockHead.appendChild(teamBlockHeadImg);
+            teamBlockContainer.append(teamBlockHead, teamBlock);
             summaryContainer.appendChild(teamBlockContainer);
           }
         }
