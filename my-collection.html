@@ -15,6 +15,7 @@
         background-color: rgb(107, 6, 107);
         color: white;
         overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
       }
 
       .game-title {
@@ -23,6 +24,7 @@
         font-size: 2.5rem;
       }
 
+      /* The starging page section */
       .start-page {
         height: 15rem;
         width: 30rem;
@@ -67,6 +69,7 @@
         cursor: pointer;
         margin: auto;
         display: block;
+        font-size: 1.3rem;
         margin-top: 2rem;
       }
 
@@ -74,6 +77,7 @@
         background-color: rgb(175, 169, 169);
       }
 
+      /* The game section */
       .game-container {
         position: relative;
         height: 32rem;
@@ -81,7 +85,6 @@
         align-items: center;
         justify-content: center;
         gap: 1rem;
-        flex-wrap: wrap;
         padding: 2.5rem 1rem 1rem 1rem;
       }
 
@@ -190,6 +193,7 @@
         width: 100%;
       }
 
+      /* The game summary section */
       .summary-container {
         height: 25rem;
         width: 35rem;
@@ -233,9 +237,35 @@
         align-items: center;
         justify-content: center;
         font-size: 1.5rem;
+        color: black;
         white-space: nowrap;
         overflow: visible;
       }
+
+      @media (max-width: 800px) {
+        html {
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        html {
+          font-size: 10px;
+        }
+      }
+
+      @media (max-width: 500px) {
+        html {
+          font-size: 8px;
+        }
+      }
+
+      @media (max-width: 400px) {
+        html {
+          font-size: 6px;
+        }
+      }
+
     </style>
   </head>
 
@@ -267,7 +297,6 @@
 
     <!-- The summary page -->
      <div class="summary-container hidden"></div>
-
 
      <!-- The script section -->
       <script>
@@ -319,6 +348,7 @@
             team.append(teamName, scorePanel, itemPanel);
             gameContainer.appendChild(team);
 
+            // accessing the values of itemPanel's height and max number of stars can be fitted in the panel
             itemPanelHeight = itemPanel.clientHeight;
             maxNumOfStars = calculateMaxItems(itemPanel);
           }
@@ -328,16 +358,14 @@
           startPage.style.display = "none";
           gameContainer.classList.remove('hidden');
           createTeams(Number(numOfTeams.value));
-
-          collectionType = typeOfCollection.value;
+          collectionType = typeOfCollection.value; // getting the value of collection type
         });
 
+        // The game section 
         function btnFunctions(btn) {
           const currentBtn = btn.currentTarget;
           const isPlusBtn = currentBtn.classList.contains("plus-btn");
-          const scoreBox = [...currentBtn.parentNode.children].find(
-            el => el !== currentBtn && el.classList.contains("score-box")
-          );
+          const scoreBox = currentBtn.parentElement.querySelector(".score-box");
           const itemPanel = currentBtn.parentElement.parentElement.querySelector(".item-panel");
           const plusSound = new Audio("./sounds/correct.mp3");
           const minusSound = new Audio("./sounds/incorrect.mp3");
@@ -354,9 +382,7 @@
             }
             scoreBox.textContent = score;
             addOrRemoveItems(collectionType, itemPanel, score);
-
           }
-
         }
 
         function calculateMaxItems(itemPanel) {
@@ -428,6 +454,7 @@
           }
         }
 
+        // to report the information about the teams for the summary page
         function reportingInfo(teamId, teamName, score) {
           report[teamId] = {
             teamName: teamName,
@@ -460,14 +487,14 @@
             "./images/fourth-star.png"
           ];
           const colors = ["green", "blue", "yellow", "red"];
-          let i = 0;
+          let i = 0; // a flag to update the background colors of team blocks
           let sortedScore = [];              
           let scores = [];
 
           for (let ts in report) {
             scores.push(report[ts].teamScore);
           }
-          sortedScore = scores.sort((a, b) => b - a);
+          sortedScore = scores.sort((a, b) => b - a); // to sort the scores from high to low 
 
           for (let team in report) {
             const teamBlockContainer = document.createElement("div");
@@ -478,25 +505,33 @@
 
             const teamBlockHeadImg = document.createElement('img');
             teamBlockHeadImg.className = "team-summary-head-img";
+
             for (let i=0; i < sortedScore.length; i++) {
               if (report[team].teamScore === sortedScore[i]) {
-                teamBlockHeadImg.src = starHeads[i];
+                teamBlockHeadImg.src = starHeads[i]; // to choose the star headings based on the scores
               }
             }
 
             const teamBlock = document.createElement("div");
             teamBlock.className = "team-summary";
+
+            // append the teamblockhead first to get its client height
+            teamBlockHead.appendChild(teamBlockHeadImg);
+            teamBlockContainer.append(teamBlockHead);
+            summaryContainer.appendChild(teamBlockContainer);
+
+            // to determine the height of the team blocks to never exceeds the height of the summary container
             const heightPerScore = (summaryContainer.clientHeight - teamBlockHead.clientHeight) / (maxNumOfStars * 2);
             const blockheight = report[team].teamScore * heightPerScore;
-            teamBlock.style.height = Math.max(blockheight, 0) + "px";
+
+            teamBlock.style.height = Math.max(blockheight, 0) + "px"; // to set the height to 0 when the value is negative
             teamBlock.style.backgroundColor = colors[i];
             teamBlock.textContent = report[team].teamName;
             teamBlock.style.boxShadow = `2px 2px 10px white`;
             teamBlock.style.borderRadius = "0 0 0.3rem 0.3rem";
             i++
 
-            teamBlockHead.appendChild(teamBlockHeadImg);
-            teamBlockContainer.append(teamBlockHead, teamBlock);
+            teamBlockContainer.append(teamBlock);
             summaryContainer.appendChild(teamBlockContainer);
           }
         }
